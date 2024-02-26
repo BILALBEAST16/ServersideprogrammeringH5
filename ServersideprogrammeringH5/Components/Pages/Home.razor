@@ -1,0 +1,61 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Policy = "AuthenticatedUser")]
+
+<h1>User:  @UserName!</h1>
+
+@if (IsAuthenticated)
+{
+    <div>
+
+        @if (string.IsNullOrEmpty(UserCPR))
+        {
+            <form @onsubmit="SubmitCPR">
+                <input type="text" @bind="CPRNumber" />
+                <button type="submit">Submit CPR</button>
+            </form>
+        }
+        else
+        {
+            <form @onsubmit="AddTodoItem">
+                <input type="text" @bind="TodoContent" />
+                <button type="submit">Add Todo Item</button>
+            </form>
+        }
+    </div>
+}
+else
+{
+    <p>Please log in to continue.</p>
+}
+
+@code {
+    private string CPRNumber = "";
+    private string TodoContent = "";
+
+    private bool IsAuthenticated => authenticationState.User.Identity.IsAuthenticated;
+    private string UserName => authenticationState.User.Identity.Name;
+    private string UserCPR => ""; // Assuming you have a way to get the CPR from the user claims
+
+    private AuthenticationState authenticationState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    }
+
+    private async Task SubmitCPR()
+    {
+        // Submitting CPR logic here, assuming it's handled by a service
+    }
+
+    private async Task AddTodoItem()
+    {
+        // Assuming you have a service for managing todo items
+        // var todoItemService = new TodoItemService();
+        // await todoItemService.AddTodoItem(TodoContent);
+        // // Clear input field after adding the todo item
+        // TodoContent = string.Empty;
+    }
+}

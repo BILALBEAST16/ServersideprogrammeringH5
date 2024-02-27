@@ -27,26 +27,24 @@ public partial class ToDoContext : DbContext
     {
         modelBuilder.Entity<Cpr>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("Cpr");
-
-            entity.Property(e => e.CprNr).HasMaxLength(12);
+            entity.ToTable("Cpr"); // Ændret til at matche tabellens navn i databasen
+            entity.HasKey(e => e.Id); // Tilføjet primær nøglekonfiguration
+            entity.Property(e => e.CprNr).HasMaxLength(500);
             entity.Property(e => e.User).HasMaxLength(500);
         });
 
         modelBuilder.Entity<ToDoList>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("ToDoList");
-
+            entity.ToTable("ToDoList");
+            entity.HasKey(e => e.Id); // Angiver primær nøgle
+            entity.Property(e => e.Id).ValueGeneratedOnAdd(); // Angiver, at værdien af Id genereres automatisk ved tilføjelse
             entity.Property(e => e.Item).HasMaxLength(500);
             entity.Property(e => e.User).HasMaxLength(500);
         });
 
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

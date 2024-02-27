@@ -1,14 +1,16 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Authorization
+@using ServersideprogrammeringH5.Data
+@using ServersideprogrammeringH5.Models
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Policy = "AuthenticatedUser")]
 
-<h1>User:  @UserName!</h1>
+<PageTitle>Home</PageTitle>
 
+<h1>User:  @UserName!</h1>
 @if (IsAuthenticated)
 {
     <div>
-
         @if (string.IsNullOrEmpty(UserCPR))
         {
             <form @onsubmit="SubmitCPR">
@@ -18,10 +20,17 @@
         }
         else
         {
-            <form @onsubmit="AddTodoItem">
-                <input type="text" @bind="TodoContent" />
-                <button type="submit">Add Todo Item</button>
-            </form>
+            @if (ShowTodoForm)
+            {
+                <form @onsubmit="AddTodoItem">
+                    <input type="text" @bind="TodoContent" />
+                    <button type="submit">Add Todo Item</button>
+                </form>
+            }
+            else
+            {
+                <button @onclick="ShowAddTodoForm">Add Todo Item</button>
+            }
         }
     </div>
 }
@@ -29,33 +38,52 @@ else
 {
     <p>Please log in to continue.</p>
 }
-
 @code {
     private string CPRNumber = "";
     private string TodoContent = "";
+    private bool ShowTodoForm = false; // Control variable for showing the todo form
 
     private bool IsAuthenticated => authenticationState.User.Identity.IsAuthenticated;
     private string UserName => authenticationState.User.Identity.Name;
     private string UserCPR => ""; // Assuming you have a way to get the CPR from the user claims
 
     private AuthenticationState authenticationState;
+    private TodoItemService todoItemService; // Declare TodoItemService instance
+
+    // Inject ToDoContext and TodoItemService using dependency injection
+    [Inject]
+    private ToDoContext _context { get; set; }
+    [Inject]
+    private TodoItemService _todoItemService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        // Initialize TodoItemService instance with injected ToDoContext
+        todoItemService = new TodoItemService(_context);
     }
 
     private async Task SubmitCPR()
     {
-        // Submitting CPR logic here, assuming it's handled by a service
+        // Check if CPRNumber is not empty
+        if (!string.IsNullOrEmpty(CPRNumber))
+        {
+            // Save the hashed information in the database
+            await _todoItemService.SubmitCPR(CPRNumber, UserName, 1); // Pass user ID as needed
+
+            // Set ShowTodoForm to true to display the todo form
+            ShowTodoForm = true;
+        }
     }
 
     private async Task AddTodoItem()
     {
-        // Assuming you have a service for managing todo items
-        // var todoItemService = new TodoItemService();
-        // await todoItemService.AddTodoItem(TodoContent);
-        // // Clear input field after adding the todo item
-        // TodoContent = string.Empty;
+        // Add logic to encrypt and save the todo item in the database
+    }
+
+    private void ShowAddTodoForm()
+    {
+        // Method to show the todo form when the button is clicked
+        ShowTodoForm = true;
     }
 }

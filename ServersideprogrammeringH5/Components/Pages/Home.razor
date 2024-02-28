@@ -1,12 +1,14 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Authorization
+@using ServersideprogrammeringH5.Codes
 @using ServersideprogrammeringH5.Data
 @using ServersideprogrammeringH5.Models
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @attribute [Authorize(Policy = "AuthenticatedUser")]
 
-<PageTitle>Home</PageTitle>
+@inject Codes.EncryptionHandler _encryptionHandler
 
+<PageTitle>Home</PageTitle>
 <h1>User:  @UserName!</h1>
 @if (IsAuthenticated)
 {
@@ -18,19 +20,16 @@
                 <button type="submit">Submit CPR</button>
             </form>
         }
-        else
+    </div>
+
+    <div>
+        <br />
+        @if (ShowTodoForm)
         {
-            @if (ShowTodoForm)
-            {
-                <form @onsubmit="AddTodoItem">
-                    <input type="text" @bind="TodoContent" />
-                    <button type="submit">Add Todo Item</button>
-                </form>
-            }
-            else
-            {
-                <button @onclick="ShowAddTodoForm">Add Todo Item</button>
-            }
+            <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent }, UserName)">
+                <input type="text" @bind="TodoContent" />
+                <button type="submit">Add Todo Item</button>
+            </form>
         }
     </div>
 }
@@ -38,14 +37,15 @@ else
 {
     <p>Please log in to continue.</p>
 }
+
 @code {
     private string CPRNumber = "";
     private string TodoContent = "";
     private bool ShowTodoForm = false; // Control variable for showing the todo form
 
-    private bool IsAuthenticated => authenticationState.User.Identity.IsAuthenticated;
-    private string UserName => authenticationState.User.Identity.Name;
-    private string UserCPR => ""; // Assuming you have a way to get the CPR from the user claims
+    private bool IsAuthenticated => authenticationState?.User?.Identity?.IsAuthenticated ?? false;
+    private string UserName => authenticationState?.User?.Identity?.Name ?? "";
+    private string UserCPR => "";
 
     private AuthenticationState authenticationState;
     private TodoItemService todoItemService; // Declare TodoItemService instance
@@ -54,10 +54,14 @@ else
     [Inject]
     private ToDoContext _context { get; set; }
     [Inject]
-    private TodoItemService _todoItemService { get; set; }
+
+    private HashingHandler _hashingHandler { get; set; }
+
+    private HashingHandler _encyptionHandler { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        //_encryptionHandler.EncryptSymetrisk("Hi Bilal");
         authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         // Initialize TodoItemService instance with injected ToDoContext
         todoItemService = new TodoItemService(_context);
@@ -69,21 +73,27 @@ else
         if (!string.IsNullOrEmpty(CPRNumber))
         {
             // Save the hashed information in the database
-            await _todoItemService.SubmitCPR(CPRNumber, UserName, 1); // Pass user ID as needed
+            await _hashingHandler.SubmitCPR(CPRNumber, UserName, 1); // Pass user ID as needed
 
             // Set ShowTodoForm to true to display the todo form
             ShowTodoForm = true;
+            // Reset CPRNumber
+            CPRNumber = "";
+
+
         }
+        ShowTodoForm = true;
     }
 
-    private async Task AddTodoItem()
+    private async Task AddTodoItem(ToDoList newItem, string user)
     {
-        // Add logic to encrypt and save the todo item in the database
+        await _encryptionHandler.AddTodoItem(newItem, user);
     }
+
 
     private void ShowAddTodoForm()
     {
         // Method to show the todo form when the button is clicked
-        ShowTodoForm = true;
+        // ShowTodoForm = !ShowTodoForm;
     }
 }

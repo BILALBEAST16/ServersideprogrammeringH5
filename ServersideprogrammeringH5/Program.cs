@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ServersideprogrammeringH5.Codes;
 using ServersideprogrammeringH5.Components;
 using ServersideprogrammeringH5.Components.Account;
 using ServersideprogrammeringH5.Data;
@@ -17,6 +18,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<EncryptionHandler, EncryptionHandler>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -29,7 +31,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddScoped<TodoItemService>();
+builder.Services.AddScoped<HashingHandler>();
+builder.Services.AddScoped<ToDoContext>();
 
 
 var todoListConnection = builder.Configuration.GetConnectionString("TodoListConnection") ?? throw new InvalidOperationException("Connection string 'TodoListConnection' not found.");

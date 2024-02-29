@@ -9,7 +9,7 @@ public partial class ToDoList
     [Key]
     public int Id { get; set; }
 
-    public string User { get; set; } = null!;
+    public string User { get; set; }
 
     public string Item { get; set; } = null!;
 }

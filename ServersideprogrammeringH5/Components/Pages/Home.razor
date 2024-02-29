@@ -26,7 +26,7 @@
         <br />
         @if (ShowTodoForm)
         {
-            <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent }, UserName)">
+            <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent}, UserName)">
                 <input type="text" @bind="TodoContent" />
                 <button type="submit">Add Todo Item</button>
             </form>
@@ -48,23 +48,20 @@ else
     private string UserCPR => "";
 
     private AuthenticationState authenticationState;
-    private TodoItemService todoItemService; // Declare TodoItemService instance
-
-    // Inject ToDoContext and TodoItemService using dependency injection
+    // Inject ToDoContext using dependency injection
     [Inject]
     private ToDoContext _context { get; set; }
     [Inject]
 
     private HashingHandler _hashingHandler { get; set; }
 
-    private HashingHandler _encyptionHandler { get; set; }
+    private AsymetriskEncryptionHandler _asymetriskencyptionHandler { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         //_encryptionHandler.EncryptSymetrisk("Hi Bilal");
         authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        // Initialize TodoItemService instance with injected ToDoContext
-        todoItemService = new TodoItemService(_context);
+        _asymetriskencyptionHandler = new AsymetriskEncryptionHandler(_context); // Initialize AsymetriskEncryptionHandler
     }
 
     private async Task SubmitCPR()
@@ -79,21 +76,19 @@ else
             ShowTodoForm = true;
             // Reset CPRNumber
             CPRNumber = "";
-
-
         }
-        ShowTodoForm = true;
     }
 
     private async Task AddTodoItem(ToDoList newItem, string user)
     {
-        await _encryptionHandler.AddTodoItem(newItem, user);
-    }
+        if (_asymetriskencyptionHandler == null)
+        {
+            return;
+        }
 
+        await _asymetriskencyptionHandler.AddTodoItem(newItem, user);
 
-    private void ShowAddTodoForm()
-    {
-        // Method to show the todo form when the button is clicked
-        // ShowTodoForm = !ShowTodoForm;
+        Console.WriteLine($"Newly added item: {newItem.Item}");
     }
 }
+

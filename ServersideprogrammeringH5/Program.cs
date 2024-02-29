@@ -33,6 +33,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddScoped<HashingHandler>();
 builder.Services.AddScoped<ToDoContext>();
+builder.Services.AddScoped<AsymetriskEncryptionHandler>();
+
 
 
 var todoListConnection = builder.Configuration.GetConnectionString("TodoListConnection") ?? throw new InvalidOperationException("Connection string 'TodoListConnection' not found.");

@@ -20,14 +20,5 @@ namespace ServersideprogrammeringH5.Codes
 
         public string DecryptSymetrisk(string textToDecrypt) =>
             _protector.Unprotect(textToDecrypt);
-    
-
-        public async Task AddTodoItem( ToDoList newItem, string user)
-        {
-            newItem.Item = _encryptionHandler.EncryptSymetrisk(newItem.Item);
-
-            _context.ToDoLists.Add(newItem);
-            await _context.SaveChangesAsync();
-        }
     }
 }

@@ -7,6 +7,8 @@
 @attribute [Authorize(Policy = "AuthenticatedUser")]
 
 @inject Codes.EncryptionHandler _encryptionHandler
+@inject Codes.HashingHandler _hashingHandler
+@inject Codes.AsymetriskEncryptionHandler _asymetriskencyptionHandler
 
 <PageTitle>Home</PageTitle>
 <h1>User:  @UserName!</h1>
@@ -20,16 +22,17 @@
                 <button type="submit">Submit CPR</button>
             </form>
         }
-    </div>
-
-    <div>
-        <br />
-        @if (ShowTodoForm)
+        else
         {
-            <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent}, UserName)">
-                <input type="text" @bind="TodoContent" />
-                <button type="submit">Add Todo Item</button>
-            </form>
+            <p>Hashed CPR: @UserCPR</p>
+            <br />
+            @if (ShowTodoForm)
+            {
+                <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent}, UserName)">
+                    <input type="text" @bind="TodoContent" />
+                    <button type="submit">Add Todo Item</button>
+                </form>
+            }
         }
     </div>
 }
@@ -42,26 +45,21 @@ else
     private string CPRNumber = "";
     private string TodoContent = "";
     private bool ShowTodoForm = false; // Control variable for showing the todo form
+    private bool CPRSubmitted = false; // Flag indicating whether CPR has been submitted
+    private string UserCPR = ""; // Declaration of UserCPR variable
 
     private bool IsAuthenticated => authenticationState?.User?.Identity?.IsAuthenticated ?? false;
     private string UserName => authenticationState?.User?.Identity?.Name ?? "";
-    private string UserCPR => "";
 
     private AuthenticationState authenticationState;
     // Inject ToDoContext using dependency injection
     [Inject]
     private ToDoContext _context { get; set; }
-    [Inject]
-
-    private HashingHandler _hashingHandler { get; set; }
-
-    private AsymetriskEncryptionHandler _asymetriskencyptionHandler { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         //_encryptionHandler.EncryptSymetrisk("Hi Bilal");
         authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        _asymetriskencyptionHandler = new AsymetriskEncryptionHandler(_context); // Initialize AsymetriskEncryptionHandler
     }
 
     private async Task SubmitCPR()
@@ -69,11 +67,18 @@ else
         // Check if CPRNumber is not empty
         if (!string.IsNullOrEmpty(CPRNumber))
         {
+            // Hash the CPR number
+            string hashedCPR = _hashingHandler.HashCPR(CPRNumber);
+
             // Save the hashed information in the database
-            await _hashingHandler.SubmitCPR(CPRNumber, UserName, 1); // Pass user ID as needed
+            await _hashingHandler.SubmitCPR(hashedCPR, UserName, 1); // Pass user ID as needed
 
             // Set ShowTodoForm to true to display the todo form
             ShowTodoForm = true;
+            // Set CPRSubmitted flag to true
+            CPRSubmitted = true;
+            // Set UserCPR to hashedCPR
+            UserCPR = hashedCPR;
             // Reset CPRNumber
             CPRNumber = "";
         }
@@ -88,7 +93,8 @@ else
 
         await _asymetriskencyptionHandler.AddTodoItem(newItem, user);
 
+        TodoContent = "";
+
         Console.WriteLine($"Newly added item: {newItem.Item}");
     }
 }
-

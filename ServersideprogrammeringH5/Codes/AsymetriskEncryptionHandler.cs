@@ -39,19 +39,28 @@ namespace ServersideprogrammeringH5.Codes
         {
             using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
             {
-                rsa.FromXmlString(_publicKey);
+                try
+                {
+                    rsa.FromXmlString(_privateKey);
 
-                byte[] dataToDecryptAsByteArray = System.Text.Encoding.UTF8.GetBytes(textToDecrypt);
-                byte[] decryptDataAsByteArray = rsa.Decrypt(dataToDecryptAsByteArray, true);
-                var decryptedDataAsString = Convert.ToBase64String(decryptDataAsByteArray);
+                    byte[] dataToDecryptAsByteArray = Convert.FromBase64String(textToDecrypt);
+                    byte[] decryptDataAsByteArray = rsa.Decrypt(dataToDecryptAsByteArray, true);
+                    var decryptedDataAsString = System.Text.Encoding.UTF8.GetString(decryptDataAsByteArray);
 
-                return decryptedDataAsString;
-
+                    return decryptedDataAsString;
+                }
+                catch (CryptographicException ex)
+                {
+                    // Handle decryption error
+                    Console.WriteLine($"Error decrypting data: {ex.Message}");
+                    return null; // Or throw an exception, depending on your error handling strategy
+                }
             }
         }
 
-        
-            public async Task AddTodoItem(ToDoList newItem, string user)
+
+
+        public async Task AddTodoItem(ToDoList newItem, string user)
             {
             Console.WriteLine($"Content of new item before encryption: {newItem.Item}");
             newItem.Item = EncryptAsymetrisk(newItem.Item);

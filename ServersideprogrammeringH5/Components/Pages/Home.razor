@@ -3,43 +3,54 @@
 @using ServersideprogrammeringH5.Codes
 @using ServersideprogrammeringH5.Data
 @using ServersideprogrammeringH5.Models
+@using Microsoft.EntityFrameworkCore;
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@attribute [Authorize(Policy = "AuthenticatedUser")]
-
-@inject Codes.EncryptionHandler _encryptionHandler
+@inject Codes.AsymetriskEncryptionHandler _asymetriskEncryptionHandler
 @inject Codes.HashingHandler _hashingHandler
-@inject Codes.AsymetriskEncryptionHandler _asymetriskencyptionHandler
+@inject Codes.EncryptionHandler _encryptionHandler
+
 
 <PageTitle>Home</PageTitle>
-<h1>User:  @UserName!</h1>
+<h1>User: @UserName!</h1>
 @if (IsAuthenticated)
 {
-    <div>
+            <h2>Current User:</h2>
+            <p>@UserName</p>
+        
         @if (string.IsNullOrEmpty(UserCPR))
         {
-            <form @onsubmit="SubmitCPR">
-                <input type="text" @bind="CPRNumber" />
+            <form @onsubmit="SubmitCPR" style="margin-right: 20px;">
+                <input type="text" @bind="CPRNumber" placeholder="Enter CPR" />
                 <button type="submit">Submit CPR</button>
             </form>
         }
         else
         {
-            <p>Hashed CPR: @UserCPR</p>
-            <br />
-            @if (ShowTodoForm)
-            {
-                <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent}, UserName)">
-                    <input type="text" @bind="TodoContent" />
-                    <button type="submit">Add Todo Item</button>
-                </form>
-            }
+                <p>Hashed CPR: @UserCPR</p>
+                @if (ShowTodoForm)
+                {
+                    <form @onsubmit="(e) => AddTodoItem(new ToDoList { Item = TodoContent}, UserName)">
+                        <input type="text" @bind="TodoContent" placeholder="Enter Todo Item" />
+                        <button type="submit">Add Todo Item</button>
+                    </form>
+                }
+            <div>
+                @if (DecryptedTodoItems != null && DecryptedTodoItems.Any())
+                {
+                    <h2>ToDo List:</h2>
+                    @foreach (var item in DecryptedTodoItems)
+                    {
+                        <p>@item</p>
+                    }
+                }
+            </div>
         }
-    </div>
 }
 else
 {
     <p>Please log in to continue.</p>
 }
+
 
 @code {
     private string CPRNumber = "";
@@ -47,6 +58,7 @@ else
     private bool ShowTodoForm = false; // Control variable for showing the todo form
     private bool CPRSubmitted = false; // Flag indicating whether CPR has been submitted
     private string UserCPR = ""; // Declaration of UserCPR variable
+    private List<string> DecryptedTodoItems = new List<string>(); // List to store decrypted todo items
 
     private bool IsAuthenticated => authenticationState?.User?.Identity?.IsAuthenticated ?? false;
     private string UserName => authenticationState?.User?.Identity?.Name ?? "";
@@ -58,7 +70,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        //_encryptionHandler.EncryptSymetrisk("Hi Bilal");
         authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
     }
 
@@ -86,15 +97,22 @@ else
 
     private async Task AddTodoItem(ToDoList newItem, string user)
     {
-        if (_asymetriskencyptionHandler == null)
+        if (_asymetriskEncryptionHandler == null)
         {
             return;
         }
 
-        await _asymetriskencyptionHandler.AddTodoItem(newItem, user);
+        await _asymetriskEncryptionHandler.AddTodoItem(newItem, user);
 
         TodoContent = "";
+        // Update the list of decrypted todo items
+        DecryptedTodoItems = await GetDecryptedTodoItems();
+    }
 
-        Console.WriteLine($"Newly added item: {newItem.Item}");
+    // Method to retrieve decrypted todo items from the database
+    private async Task<List<string>> GetDecryptedTodoItems()
+    {
+        var todoItems = await _context.ToDoLists.ToListAsync();
+        return todoItems.Select(item => _asymetriskEncryptionHandler.DecryptAsymetrisk(item.Item)).ToList();
     }
 }
